@@ -218,49 +218,50 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     }
     
 }
-// 自动启动 PostgreSQL
+// // 自动启动 PostgreSQL
 
-task startPostgresIfNeeded {
-    doLast {
-        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
-            logger.lifecycle 'Skipping PostgreSQL startup on non-Windows'
-            return
-        }
+// task startPostgresIfNeeded {
+//     doLast {
+//         if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+//             logger.lifecycle 'Skipping PostgreSQL startup on non-Windows'
+//             return
+//         }
 
-        // 端口占用检查
-        def port = 5432
-        def socket = new Socket()
-        try {
-            socket.connect(new InetSocketAddress('127.0.0.1', port), 1000)
-            logger.lifecycle "PostgreSQL already running on port $port"
-            return
-        } catch (ignored) {
-            // 端口空闲
-        } finally {
-            socket.close()
-        }
+//         // 端口占用检查
+//         def port = 5432
+//         def socket = new Socket()
+//         try {
+//             socket.connect(new InetSocketAddress('127.0.0.1', port), 1000)
+//             logger.lifecycle "PostgreSQL already running on port $port"
+//             return
+//         } catch (ignored) {
+//             // 端口空闲
+//         } finally {
+//             socket.close()
+//         }
 
-        // 后台启动
-        def root = project.rootDir.absolutePath
-        def cmd = [
-            'powershell',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', "$root/start_postgres.ps1"
-        ]
-        def proc = cmd.execute()
-        proc.consumeProcessOutput(System.out, System.err)
-        Thread.sleep(5000)   // 给 5 秒完成启动
-    }
-}
+//         // 后台启动
+//         def root = project.rootDir.absolutePath
+//         def cmd = [
+//             'powershell',
+//             '-ExecutionPolicy', 'Bypass',
+//             '-File', "$root/start_postgres.ps1"
+//         ]
+//         def proc = cmd.execute()
+//         proc.consumeProcessOutput(System.out, System.err)
+//         Thread.sleep(5000)   // 给 5 秒完成启动
+//     }
+// }
 
 // 自动建库建用户
 task setupCordaDb(type: Exec) {
-    dependsOn 'startPostgresIfNeeded'
+    // 不需要依赖 startPostgresIfNeeded
     commandLine 'psql',
                 '-U', 'postgres',
+                '-h', 'localhost',
                 '-d', 'postgres',
                 '-f', "$rootDir/setup_corda_db.sql"
-    environment 'PGPASSWORD', '890415'   // PostgreSQL 超级用户密码
+    environment 'PGPASSWORD', '890415'
 }
 
 // 最终部署节点
